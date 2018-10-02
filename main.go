@@ -4,8 +4,6 @@ import (
 	//"bufio"
 	"fmt"
 	"log"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -26,12 +24,12 @@ func main() {
 	}
 
 	// // Start a worker goroutine, giving it the channel to notify on.
-	formatedRow := make(chan sampleData, 50) // Chan
+	formatedRow := make(chan SampleData, 50) // Chan
 	readFinished := make(chan bool, 1)       // Chan
 	processFinished := make(chan bool, 1)    // Chan
 	sqlActorFinished := make(chan bool, 1)   // Chan
 
-	rowStoragePtr := new([]sampleData) // Ptr
+	rowStoragePtr := new([]SampleData) // Ptr
 
 	log.Println("formatedRow Chan prepared")
 
@@ -60,38 +58,10 @@ func main() {
 
 }
 
-func csvReadWorker(config Configuration, filePath string, formatedRow chan<- sampleData) {
+func csvReadWorker(config Configuration, filePath string, formatedRow chan<- SampleData) {
 	log.Println("csvReadWorker", "r"+string(config.CSVReaderID), "reading...")
 
-	ReadCSVFileByLine(filePath, true, func(msg string) {
-		vals := strings.Split(msg, ",")
-
-		//TODO: Valid value here
-		oid, _ := strconv.ParseInt(vals[5], 10, 64)
-		uSold, _ := strconv.ParseInt(vals[7], 10, 64)
-
-		uPrice, _ := strconv.ParseFloat(vals[8], 64)
-		uCost, _ := strconv.ParseFloat(vals[9], 64)
-
-		tRevenue, _ := strconv.ParseFloat(vals[10], 64)
-		tCost, _ := strconv.ParseFloat(vals[11], 64)
-		tProfit, _ := strconv.ParseFloat(vals[12], 64)
-
-		formatedRow <- sampleData{
-			Country:       vals[0],
-			ItemType:      vals[1],
-			SalesChannel:  vals[2],
-			OrderPriority: vals[3],
-			OrderDate:     vals[4],
-			OrderID:       int(oid),
-			ShipDate:      vals[6],
-			UnitsSold:     int(uSold),
-			UnitPrice:     uPrice,
-			UnitCost:      uCost,
-			TotalRevenue:  tRevenue,
-			TotalCost:     tCost,
-			TotalProfit:   tProfit}
-	})
+	ReadCSVFileByLine(filePath, true, func(msg string) { formatedRow <- SampleDataParser(msg) })
 
 	log.Println("csvReadWorker", config.CSVReaderID, "offline")
 
@@ -99,7 +69,7 @@ func csvReadWorker(config Configuration, filePath string, formatedRow chan<- sam
 	close(formatedRow)
 }
 
-func csvProcessWorker(config Configuration, singleRow <-chan sampleData, rowStorage *[]sampleData) {
+func csvProcessWorker(config Configuration, singleRow <-chan SampleData, rowStorage *[]SampleData) {
 	log.Println("csvProcessWorker", config.ProcessWorkerID, "propressing...")
 
 	for {
@@ -121,7 +91,7 @@ func csvProcessWorker(config Configuration, singleRow <-chan sampleData, rowStor
 }
 
 // SQLInserionWorker 123
-func SQLInserionWorker(config Configuration, ptr *[]sampleData) {
+func SQLInserionWorker(config Configuration, ptr *[]SampleData) {
 
 	idleCounter := 0
 
@@ -140,7 +110,7 @@ func SQLInserionWorker(config Configuration, ptr *[]sampleData) {
 		}
 
 		idleCounter = 0
-		var tmp []sampleData
+		var tmp []SampleData
 
 		if storedRows > config.MaxSQLInsertionRow {
 			tmp = (*ptr)[:config.MaxSQLInsertionRow]
