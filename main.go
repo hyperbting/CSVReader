@@ -16,11 +16,11 @@ func main() {
 	config := LoadConfig()
 
 	// read from console for the csv files
-	fmt.Print("Enter file path: [./5kSalesRecords.csv]")
+	fmt.Print("Enter file path: [./100SalesRecords.csv]")
 	var filPath string
 	fmt.Scanln(&filPath)
 	if len(filPath) <= 0 {
-		filPath = "./5kSalesRecords.csv"
+		filPath = "./100SalesRecords.csv"
 	}
 
 	// // Start a worker goroutine, giving it the channel to notify on.
