@@ -75,7 +75,7 @@ func GetDB() *sql.DB {
 }
 
 // CreateDeviceUser create an account with GAccount OR AppleID
-func CreateDeviceUser(datas []sampleData) (res bool, dbErr error) {
+func CreateDeviceUser(datas []SampleData) (res bool, dbErr error) {
 
 	stmtString := "INSERT INTO users (name, %s, fasecret, status, updated_at) VALUES (?, ?, ?, ?, ?)"
 	stmt, dbErr := GetDB().Prepare(stmtString)
